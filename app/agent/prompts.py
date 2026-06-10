@@ -35,3 +35,50 @@ GRADE_TEMPLATE = (
 
 # Message shown to the user when the agent abstains.
 IDK_MESSAGE = "I don't know based on the provided documents."
+
+# --- Routing (adaptive RAG) -------------------------------------------------
+ROUTE_SYSTEM = (
+    "You are a router for a retrieval system whose knowledge base is a set of "
+    "academic AI/ML papers (Transformers, BERT, RAG, chain-of-thought, LoRA). "
+    "Classify the user's question into exactly one route: 'retrieve' if answering "
+    "needs the papers; 'direct' if it is a greeting or a question about the "
+    "assistant itself that needs no documents; 'refuse' if it is unrelated to the "
+    "papers or asks you to do something other than answer questions about them."
+)
+ROUTE_TEMPLATE = (
+    'Question: {question}\n\n'
+    'Return JSON: {{"route": "retrieve" | "direct" | "refuse", "reason": "<short>"}}'
+)
+
+# Direct (no-retrieval) answers for safe general questions.
+DIRECT_SYSTEM = (
+    "You are the assistant for a retrieval demo over AI/ML research papers. Answer "
+    "the user's message briefly and helpfully. If answering well would require the "
+    "papers, say you can look it up in the documents."
+)
+
+# Shown when a query is refused (out of scope / blocked).
+REFUSE_MESSAGE = (
+    "I can only answer questions about the indexed documents (a set of AI/ML "
+    "research papers). That request appears to be out of scope."
+)
+
+# --- Query reformulation ----------------------------------------------------
+TRANSFORM_SYSTEM = (
+    "You rewrite a user question into a single, more precise standalone search "
+    "query to improve document retrieval. Keep it concise and keyword-rich."
+)
+TRANSFORM_TEMPLATE = (
+    'Original question: {question}\n\nReturn JSON: {{"query": "<improved query>"}}'
+)
+
+# --- Grounding gate (runtime faithfulness check) ----------------------------
+GROUNDING_SYSTEM = (
+    "You check whether an answer is fully supported by the provided context. The "
+    "answer is grounded only if every factual claim it makes is supported by the "
+    "context."
+)
+GROUNDING_TEMPLATE = (
+    'Context:\n{context}\n\nAnswer:\n{answer}\n\n'
+    'Return JSON: {{"grounded": true or false, "reason": "<short>"}}'
+)

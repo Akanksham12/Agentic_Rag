@@ -11,10 +11,19 @@ transform, grounding) are added when the full graph is assembled.
 from __future__ import annotations
 
 from app.agent.prompts import (
+    DIRECT_SYSTEM,
     GENERATE_SYSTEM,
     GENERATE_TEMPLATE,
     GRADE_SYSTEM,
     GRADE_TEMPLATE,
+    GROUNDING_SYSTEM,
+    GROUNDING_TEMPLATE,
+    IDK_MESSAGE,
+    REFUSE_MESSAGE,
+    ROUTE_SYSTEM,
+    ROUTE_TEMPLATE,
+    TRANSFORM_SYSTEM,
+    TRANSFORM_TEMPLATE,
 )
 from app.agent.state import AgentState
 from app.config import Settings, get_settings
@@ -109,3 +118,69 @@ class AgentNodes:
         )
         logger.info("generate", chars=len(answer), sources=len(results))
         return {"answer": answer, "sources": to_sources(results), "abstained": False}
+
+    # -- adaptive nodes ------------------------------------------------------
+
+    def route_query(self, state: AgentState) -> dict:
+        """Decide whether a query needs retrieval, a direct answer, or refusal."""
+        try:
+            verdict = self.provider.generate_json(
+                [system(ROUTE_SYSTEM), user(ROUTE_TEMPLATE.format(question=state["question"]))]
+            )
+            route = verdict.get("route", "retrieve")
+        except ValueError:
+            route = "retrieve"
+        if route not in {"retrieve", "direct", "refuse"}:
+            route = "retrieve"
+        logger.info("route_query", route=route)
+        return {"route": route}
+
+    def answer_direct(self, state: AgentState) -> dict:
+        """Answer a safe general question without retrieval."""
+        answer = self.provider.generate([system(DIRECT_SYSTEM), user(state["question"])])
+        logger.info("answer_direct", chars=len(answer))
+        return {"answer": answer, "sources": [], "abstained": False, "route": "direct"}
+
+    def refuse(self, state: AgentState) -> dict:
+        """Terminal node for blocked / out-of-scope queries."""
+        logger.info("refuse")
+        return {"answer": REFUSE_MESSAGE, "sources": [], "refused": True, "abstained": True}
+
+    def transform_query(self, state: AgentState) -> dict:
+        """Reformulate the question to improve retrieval, then loop back."""
+        try:
+            verdict = self.provider.generate_json(
+                [
+                    system(TRANSFORM_SYSTEM),
+                    user(TRANSFORM_TEMPLATE.format(question=state["question"])),
+                ]
+            )
+            rewritten = verdict.get("query") or state["question"]
+        except ValueError:
+            rewritten = state["question"]
+        logger.info("transform_query", rewritten=rewritten)
+        return {"rewritten_question": rewritten}
+
+    def grounding_check(self, state: AgentState) -> dict:
+        """Verify the generated answer is actually supported by the context."""
+        context = format_context(state.get("retrieved", []))
+        try:
+            verdict = self.provider.generate_json(
+                [
+                    system(GROUNDING_SYSTEM),
+                    user(
+                        GROUNDING_TEMPLATE.format(context=context, answer=state.get("answer", ""))
+                    ),
+                ]
+            )
+            grounded = bool(verdict.get("grounded"))
+        except ValueError:
+            # Fail open: keep the answer rather than abstaining on a parse error.
+            grounded = True
+        logger.info("grounding_check", grounded=grounded)
+        return {"grounded": grounded}
+
+    def say_idk(self, state: AgentState) -> dict:
+        """Terminal node: honestly abstain."""
+        logger.info("say_idk")
+        return {"answer": IDK_MESSAGE, "abstained": True}
