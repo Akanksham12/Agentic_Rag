@@ -28,6 +28,7 @@ from app.agent.prompts import (
 from app.agent.state import AgentState
 from app.config import Settings, get_settings
 from app.embeddings.embedder import Embedder
+from app.guardrails.guardrails import is_blocked
 from app.llm.base import LLMProvider, system, user
 from app.llm.factory import get_provider
 from app.logging import get_logger
@@ -120,6 +121,13 @@ class AgentNodes:
         return {"answer": answer, "sources": to_sources(results), "abstained": False}
 
     # -- adaptive nodes ------------------------------------------------------
+
+    def guardrail_check(self, state: AgentState) -> dict:
+        """Deterministic pre-LLM screen for prompt injection (graph entry)."""
+        blocked, reason = is_blocked(state["question"])
+        if blocked:
+            logger.warning("guardrail_blocked", reason=reason)
+        return {"blocked": blocked}
 
     def route_query(self, state: AgentState) -> dict:
         """Decide whether a query needs retrieval, a direct answer, or refusal."""

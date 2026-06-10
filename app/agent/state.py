@@ -23,6 +23,7 @@ class AgentState(TypedDict, total=False):
         rewritten_question: A reformulated query (set by ``transform_query``).
         retrieved: Chunks returned by the latest retrieval.
         attempts: Number of retrieval attempts made so far.
+        blocked: Whether the deterministic guardrail blocked the query.
         route: Routing verdict — ``"retrieve" | "direct" | "refuse"``.
         grade: Document-grading verdict — ``"relevant" | "insufficient"``.
         answer: The final answer text.
@@ -36,6 +37,7 @@ class AgentState(TypedDict, total=False):
     rewritten_question: str
     retrieved: list[SearchResult]
     attempts: int
+    blocked: bool
     route: str
     grade: str
     answer: str

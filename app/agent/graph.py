@@ -29,6 +29,11 @@ from app.logging import get_logger
 logger = get_logger(__name__)
 
 
+def _guardrail_decision(state: AgentState) -> str:
+    """Branch key after the deterministic guardrail screen."""
+    return "blocked" if state.get("blocked") else "ok"
+
+
 def _route_decision(state: AgentState) -> str:
     """Branch key after routing."""
     return state.get("route", "retrieve")
@@ -66,6 +71,7 @@ def build_graph(nodes: AgentNodes | None = None, settings: Settings | None = Non
     nodes = nodes or AgentNodes(settings=settings)
 
     graph = StateGraph(AgentState)
+    graph.add_node("guardrail_check", nodes.guardrail_check)
     graph.add_node("route_query", nodes.route_query)
     graph.add_node("retrieve", nodes.retrieve)
     graph.add_node("grade_documents", nodes.grade_documents)
@@ -75,7 +81,12 @@ def build_graph(nodes: AgentNodes | None = None, settings: Settings | None = Non
     graph.add_node("refuse", nodes.refuse)
     graph.add_node("say_idk", nodes.say_idk)
 
-    graph.add_edge(START, "route_query")
+    graph.add_edge(START, "guardrail_check")
+    graph.add_conditional_edges(
+        "guardrail_check",
+        _guardrail_decision,
+        {"blocked": "refuse", "ok": "route_query"},
+    )
     graph.add_conditional_edges(
         "route_query",
         _route_decision,

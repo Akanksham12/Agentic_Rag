@@ -57,10 +57,11 @@ DIRECT_SYSTEM = (
     "papers, say you can look it up in the documents."
 )
 
-# Shown when a query is refused (out of scope / blocked).
+# Shown when a query is refused (out of scope / blocked by a guardrail).
 REFUSE_MESSAGE = (
-    "I can only answer questions about the indexed documents (a set of AI/ML "
-    "research papers). That request appears to be out of scope."
+    "I can't help with that. I only answer questions about the indexed documents "
+    "(a set of AI/ML research papers), and I ignore instructions that try to "
+    "change my behaviour. Your request was blocked or is out of scope."
 )
 
 # --- Query reformulation ----------------------------------------------------
