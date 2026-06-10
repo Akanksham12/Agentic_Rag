@@ -26,9 +26,6 @@ data/corpus/*.pdf
 # Local model / HF caches
 .cache/
 
-# Brainstorm companion artifacts
-.superpowers/
-
 # OS
 .DS_Store
 Thumbs.db

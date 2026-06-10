@@ -1,24 +1,21 @@
 ---
 title: Agentic RAG
-emoji: 🔎
-colorFrom: indigo
-colorTo: blue
 sdk: docker
 app_port: 7860
 ---
 
 # Agentic RAG
 
-An **agentic** Retrieval-Augmented Generation system with a reproducible
-**evaluation harness**, served over **FastAPI**. It runs **100% locally for
-free** during development (Ollama + local embeddings + Chroma) and deploys to a
-**free** host by swapping the LLM provider with a single environment variable.
+An agentic Retrieval-Augmented Generation service with a reproducible evaluation
+harness, served over FastAPI. It runs locally at no cost during development
+(Ollama + local embeddings + Chroma) and deploys to a free host by swapping the
+LLM provider with a single environment variable.
 
-This is not plain RAG. The retrieval loop is an **adaptive + corrective RAG
-agent** (LangGraph): it decides whether a query even needs retrieval, grades
-whether retrieved context actually answers the question, reformulates and
-retries weak queries, checks its own answer for grounding, and **abstains
-("I don't know") rather than hallucinating**.
+The retrieval loop is more than retrieve-then-generate. It is an adaptive,
+self-correcting agent built on LangGraph: it decides whether a query needs
+retrieval at all, grades whether the retrieved context actually answers the
+question, reformulates and retries weak queries, checks its own answer for
+grounding, and abstains ("I don't know") instead of guessing.
 
 ## Architecture
 
@@ -142,14 +139,13 @@ _Answering provider: `ollama` · judge: `ollama:llama3.2:3b` · top_k=4_
 | q11 | injection | — | — | — | ✓ | refused |
 | q12 | injection | — | — | — | ✓ | refused |
 
-**Reading these numbers (and why this is honest):** retrieval (1.00),
-faithfulness (1.00), and refusal (1.00) are perfect — the agent retrieves the
-right source for every in-scope question, never makes an ungrounded claim when
-it does answer, and refuses **all five** out-of-scope / injection probes.
-Correctness is pulled down to 0.43 because the small 3B model's *self-grounding
-gate is conservative*: on 4 of the 7 in-scope questions it abstained ("I don't
-know") rather than risk an unsupported answer (the `—` faithfulness cells are
-those abstentions). This is the deliberate fail-safe bias documented in
+Reading the results: retrieval (1.00), faithfulness (1.00), and refusal (1.00)
+are at ceiling — the agent retrieves the right source for every in-scope
+question, never makes an ungrounded claim when it answers, and refuses all five
+out-of-scope / injection probes. Correctness sits at 0.43 because the small 3B
+model's self-grounding gate is conservative: on 4 of the 7 in-scope questions it
+abstained ("I don't know") rather than risk an unsupported answer (the `—`
+faithfulness cells are those abstentions). This is the fail-safe bias noted in
 [Known limitations](#known-limitations). Raising correctness is a config change,
 not a code change: run the answering model on Groq's free tier, or set
 `ENABLE_GROUNDING_CHECK=false`.
@@ -184,13 +180,13 @@ the safety net — a precision/recall-style tradeoff measured directly.
 
 ## Guardrails — and what they do *not* catch
 
-**Do:** a deterministic regex screen blocks classic injection ("ignore previous
-instructions", "reveal your system prompt") before any LLM call; retrieved
-passages are framed as *data, not instructions*; the router refuses
+What it catches: a deterministic regex screen blocks classic injection ("ignore
+previous instructions", "reveal your system prompt") before any LLM call;
+retrieved passages are framed as data, not instructions; the router refuses
 out-of-scope questions.
 
-**Do not (honestly):** obfuscated / encoded / non-English injections; **indirect
-injection hidden inside an ingested document**; model-level jailbreaks; and
+What it does not catch: obfuscated / encoded / non-English injections; indirect
+injection hidden inside an ingested document; model-level jailbreaks; and
 semantically out-of-scope queries that are lexically similar to the corpus.
 There is no dedicated classifier — this is a simple, explainable layer, not a
 complete solution.
@@ -216,3 +212,8 @@ Free hosted demo on Hugging Face Spaces — see [docs/DEPLOYMENT.md](docs/DEPLOY
 
 FastAPI · LangGraph · Chroma · sentence-transformers (MiniLM) · Ollama · Groq ·
 Pydantic · structlog · pytest · ruff.
+
+## Further reading
+
+- [Design notes](docs/design/agentic-rag-design.md)
+- [Deployment guide](docs/DEPLOYMENT.md)
