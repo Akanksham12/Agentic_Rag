@@ -34,6 +34,10 @@ def configure_logging() -> None:
 
     logging.basicConfig(format="%(message)s", stream=sys.stdout, level=level)
 
+    # Quiet chatty third-party loggers so our structured logs stay readable.
+    for noisy in ("httpx", "httpcore", "urllib3", "sentence_transformers"):
+        logging.getLogger(noisy).setLevel(logging.WARNING)
+
     structlog.configure(
         processors=[
             structlog.contextvars.merge_contextvars,
