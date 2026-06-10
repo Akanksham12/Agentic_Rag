@@ -81,7 +81,9 @@ class ChromaStore:
         logger.info("chunks_upserted", count=len(chunks))
         return len(chunks)
 
-    def similarity_search(self, query_embedding: list[float], top_k: int | None = None) -> list[SearchResult]:
+    def similarity_search(
+        self, query_embedding: list[float], top_k: int | None = None
+    ) -> list[SearchResult]:
         """Return the ``top_k`` most similar chunks to a query embedding."""
         top_k = top_k or get_settings().top_k
         if self.count() == 0:

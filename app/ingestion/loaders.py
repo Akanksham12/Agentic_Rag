@@ -39,10 +39,17 @@ def load_pdf(path: str | Path) -> Document:
     reader = PdfReader(str(path))
     pages = [(page.extract_text() or "").strip() for page in reader.pages]
     content = "\n\n".join(p for p in pages if p)
-    logger.info("loaded_pdf", source=path.name, pages=len(reader.pages), chars=len(content))
+    logger.info(
+        "loaded_pdf", source=path.name, pages=len(reader.pages), chars=len(content)
+    )
     return Document(
         content=content,
-        metadata={"source": path.name, "type": "pdf", "path": str(path), "pages": len(reader.pages)},
+        metadata={
+            "source": path.name,
+            "type": "pdf",
+            "path": str(path),
+            "pages": len(reader.pages),
+        },
     )
 
 

@@ -82,8 +82,12 @@ class AgentNodes:
         """Embed the (possibly rewritten) query and fetch top-k chunks."""
         query = state.get("rewritten_question") or state["question"]
         top_k = state.get("top_k") or self.settings.top_k
-        results = self.store.similarity_search(self.embedder.embed_query(query), top_k=top_k)
-        logger.info("retrieve", query=query, hits=len(results), attempt=state.get("attempts", 0) + 1)
+        results = self.store.similarity_search(
+            self.embedder.embed_query(query), top_k=top_k
+        )
+        logger.info(
+            "retrieve", query=query, hits=len(results), attempt=state.get("attempts", 0) + 1
+        )
         return {"retrieved": results, "attempts": state.get("attempts", 0) + 1}
 
     def grade_documents(self, state: AgentState) -> dict:

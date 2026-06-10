@@ -66,7 +66,10 @@ class LLMProvider(ABC):
         Raises:
             ValueError: If no JSON object can be parsed from the output.
         """
-        guided = [*messages, system("Respond with a single valid JSON object only. No prose, no code fences.")]
+        guided = [
+            *messages,
+            system("Respond with a single valid JSON object only. No prose, no code fences."),
+        ]
         raw = self.generate(guided, temperature=temperature)
         return self._parse_json(raw)
 

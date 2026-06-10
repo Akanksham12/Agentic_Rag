@@ -10,6 +10,7 @@ from __future__ import annotations
 import shutil
 import tempfile
 from pathlib import Path
+from typing import Annotated
 
 from fastapi import APIRouter, File, Request, UploadFile
 
@@ -54,7 +55,9 @@ def query(request: Request, body: QueryRequest) -> QueryResponse:
 
 
 @router.post("/ingest", response_model=IngestResponse, tags=["rag"])
-async def ingest(request: Request, files: list[UploadFile] = File(...)) -> IngestResponse:
+async def ingest(
+    request: Request, files: Annotated[list[UploadFile], File()]
+) -> IngestResponse:
     """Ingest uploaded PDF/Markdown files into the vector store.
 
     Files are written to a temp dir, run through the pipeline, then removed.
