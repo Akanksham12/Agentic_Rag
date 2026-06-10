@@ -129,9 +129,17 @@ class RagAgent:
         self.nodes = nodes or AgentNodes(settings=self.settings)
         self.graph = build_graph(self.nodes, self.settings)
 
-    def run(self, question: str) -> dict:
-        """Answer ``question`` and return the answer with its decision trace."""
-        final = self.graph.invoke({"question": question, "attempts": 0})
+    def run(self, question: str, top_k: int | None = None) -> dict:
+        """Answer ``question`` and return the answer with its decision trace.
+
+        Args:
+            question: The user's question.
+            top_k: Optional per-request retrieval depth (defaults to ``TOP_K``).
+        """
+        initial: dict = {"question": question, "attempts": 0}
+        if top_k is not None:
+            initial["top_k"] = top_k
+        final = self.graph.invoke(initial)
         route = "refused" if final.get("refused") else final.get("route", "retrieve")
         return {
             "answer": final.get("answer", ""),

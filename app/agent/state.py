@@ -35,6 +35,7 @@ class AgentState(TypedDict, total=False):
 
     question: str
     rewritten_question: str
+    top_k: int
     retrieved: list[SearchResult]
     attempts: int
     blocked: bool
