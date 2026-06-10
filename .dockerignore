@@ -1,0 +1,15 @@
+# Build context hygiene — the image regenerates these.
+.venv/
+.chroma/
+.git/
+.gitignore
+tests/
+docs/
+.superpowers/
+__pycache__/
+**/__pycache__/
+*.pyc
+.pytest_cache/
+.ruff_cache/
+.env
+data/corpus/*.pdf
