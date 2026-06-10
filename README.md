@@ -154,6 +154,22 @@ those abstentions). This is the deliberate fail-safe bias documented in
 not a code change: run the answering model on Groq's free tier, or set
 `ENABLE_GROUNDING_CHECK=false`.
 
+### Ablation: the grounding gate on vs. off
+
+Same local `llama3.2:3b`, the only change is `ENABLE_GROUNDING_CHECK`:
+
+| Config | Hit-rate@4 | Faithfulness | Correctness | Refusal |
+| --- | --- | --- | --- | --- |
+| Grounding **ON** (default) | 1.00 | **1.00** | 0.43 | 1.00 |
+| Grounding **OFF** | 1.00 | **0.43** | 0.50 | 1.00 |
+
+Disabling the gate forces an answer to every in-scope question, but correctness
+barely moves (0.43 → 0.50) while **faithfulness collapses (1.00 → 0.43)** — the
+model now makes unsupported claims. So the gate trades a little correctness for
+**never hallucinating**, and the real correctness ceiling is the small model's
+answer quality, not the gate. The fix is a stronger model (Groq), not removing
+the safety net — a precision/recall-style tradeoff measured directly.
+
 ## Design decisions
 
 | Decision | Choice | Why |
