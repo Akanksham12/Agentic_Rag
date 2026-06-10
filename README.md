@@ -215,5 +215,6 @@ Pydantic · structlog · pytest · ruff.
 
 ## Further reading
 
+- [Running locally](docs/RUNNING.md)
 - [Design notes](docs/design/agentic-rag-design.md)
 - [Deployment guide](docs/DEPLOYMENT.md)
