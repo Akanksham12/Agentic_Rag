@@ -13,12 +13,19 @@ from pathlib import Path
 from typing import Annotated
 
 from fastapi import APIRouter, File, Request, UploadFile
+from fastapi.responses import RedirectResponse
 
 from app.api.models import HealthResponse, IngestResponse, QueryRequest, QueryResponse
 from app.logging import get_logger
 
 logger = get_logger("api.routes")
 router = APIRouter()
+
+
+@router.get("/", include_in_schema=False)
+def root() -> RedirectResponse:
+    """Redirect the bare root URL to the interactive API docs."""
+    return RedirectResponse(url="/docs")
 
 
 @router.get("/health", response_model=HealthResponse, tags=["ops"])
