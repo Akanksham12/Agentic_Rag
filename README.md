@@ -17,6 +17,8 @@ retrieval at all, grades whether the retrieved context actually answers the
 question, reformulates and retries weak queries, checks its own answer for
 grounding, and abstains ("I don't know") instead of guessing.
 
+**Live demo:** https://nidixh-agentic-rag.hf.space/docs (interactive API docs)
+
 ## Architecture
 
 ```mermaid
@@ -206,7 +208,9 @@ complete solution.
 
 ## Deployment
 
-Free hosted demo on Hugging Face Spaces — see [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md).
+Hosted free on Hugging Face Spaces (Docker), using Groq for generation so the
+demo needs no GPU: **https://nidixh-agentic-rag.hf.space/docs**. Setup steps and
+the required environment variables are in [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md).
 
 ## Tech stack
 
