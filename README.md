@@ -209,8 +209,10 @@ complete solution.
 ## Deployment
 
 Hosted free on Hugging Face Spaces (Docker), using Groq for generation so the
-demo needs no GPU: **https://nidixh-agentic-rag.hf.space/docs**. Setup steps and
-the required environment variables are in [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md).
+demo needs no GPU: **https://nidixh-agentic-rag.hf.space/docs**. The image (see
+`Dockerfile`) bakes the embedding model and pre-ingests the corpus; the provider
+is selected with the `LLM_PROVIDER` and `GROQ_API_KEY` environment variables set
+on the Space.
 
 ## Tech stack
 
@@ -221,4 +223,3 @@ Pydantic · structlog · pytest · ruff.
 
 - [Running locally](docs/RUNNING.md)
 - [Design notes](docs/design/agentic-rag-design.md)
-- [Deployment guide](docs/DEPLOYMENT.md)
