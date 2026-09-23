@@ -68,7 +68,12 @@ with gr.Blocks(title="Agentic RAG") as demo:
             placeholder="What problem does LoRA address?",
             scale=4,
         )
-        top_k = gr.Slider(1, 10, value=4, step=1, label="Top-k", scale=1)
+        top_k = gr.Dropdown(
+            choices=[str(value) for value in range(1, 11)],
+            value="4",
+            label="Top-k",
+            scale=1,
+        )
     submit = gr.Button("Ask", variant="primary")
     answer = gr.Markdown(label="Answer")
     sources = gr.JSON(label="Sources")
