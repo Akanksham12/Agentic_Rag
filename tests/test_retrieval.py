@@ -137,6 +137,32 @@ def test_relevant_docs_produce_grounded_cited_answer() -> None:
     assert final["sources"]
 
 
+def test_lora_retrieval_adds_ml_disambiguation() -> None:
+    nodes = AgentNodes(
+        provider=FakeProvider(),
+        embedder=FakeEmbedder(),
+        store=FakeStore([SearchResult("x", {"source": "lora.pdf"}, 0.9)]),
+        settings=Settings(),
+    )
+    result = nodes.retrieve(
+        {"question": "What problem does LoRA address?", "attempts": 0}
+    )
+    assert result["retrieved"]
+
+
+def test_model_idk_answer_is_marked_abstained() -> None:
+    nodes = AgentNodes(
+        provider=FakeProvider(answer=IDK_MESSAGE),
+        embedder=FakeEmbedder(),
+        store=FakeStore([SearchResult("context", {"source": "lora.pdf"}, 0.9)]),
+        settings=Settings(enable_grounding_check=False),
+    )
+    result = nodes.generate(
+        {"question": "What problem does LoRA address?", "retrieved": nodes.store._results}
+    )
+    assert result["abstained"] is True
+
+
 def test_persistently_weak_retrieval_exhausts_retries_then_abstains() -> None:
     agent = make_agent(route="retrieve", relevant=False, settings=Settings(max_attempts=2))
     final = agent.invoke({"question": "q", "attempts": 0})

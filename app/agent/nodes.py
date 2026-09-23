@@ -83,6 +83,8 @@ class AgentNodes:
     def retrieve(self, state: AgentState) -> dict:
         """Embed the (possibly rewritten) query and fetch top-k chunks."""
         query = state.get("rewritten_question") or state["question"]
+        if "lora" in query.lower() and "low-rank adaptation" not in query.lower():
+            query = f"{query} Low-Rank Adaptation parameter-efficient fine-tuning"
         top_k = state.get("top_k") or self.settings.top_k
         results = self.store.similarity_search(
             self.embedder.embed_query(query), top_k=top_k
@@ -137,7 +139,11 @@ class AgentNodes:
             ]
         )
         logger.info("generate", chars=len(answer), sources=len(results))
-        return {"answer": answer, "sources": to_sources(results), "abstained": False}
+        return {
+            "answer": answer,
+            "sources": to_sources(results),
+            "abstained": answer.strip() == IDK_MESSAGE,
+        }
 
     # -- adaptive nodes ------------------------------------------------------
 
