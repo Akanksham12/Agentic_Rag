@@ -41,7 +41,7 @@ def _zerogpu_marker() -> None:
     return None
 
 
-def answer_question(question: str, top_k: int) -> tuple[str, list[dict], dict]:
+def answer_question(question: str, top_k: str | int) -> tuple[str, list[dict], dict]:
     """Run one question through the existing agent and format its trace."""
     if not question or not question.strip():
         return "Please enter a question.", [], {}
@@ -50,6 +50,7 @@ def answer_question(question: str, top_k: int) -> tuple[str, list[dict], dict]:
         retrieval_depth = int(top_k)
     except (TypeError, ValueError):
         retrieval_depth = 4
+    retrieval_depth = max(1, min(retrieval_depth, 20))
     result = agent.run(question.strip(), top_k=retrieval_depth)
     trace = {
         "route": result["route_taken"],
@@ -68,12 +69,7 @@ with gr.Blocks(title="Agentic RAG") as demo:
             placeholder="What problem does LoRA address?",
             scale=4,
         )
-        top_k = gr.Dropdown(
-            choices=[str(value) for value in range(1, 11)],
-            value="4",
-            label="Top-k",
-            scale=1,
-        )
+        top_k = gr.Textbox(value="4", label="Top-k", scale=1)
     submit = gr.Button("Ask", variant="primary")
     answer = gr.Markdown(label="Answer")
     sources = gr.JSON(label="Sources")
