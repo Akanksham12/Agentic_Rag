@@ -5,6 +5,7 @@ from __future__ import annotations
 from pathlib import Path
 
 import gradio as gr
+import spaces
 
 from app.agent.graph import RagAgent
 from app.config import get_settings
@@ -34,6 +35,7 @@ def build_agent() -> RagAgent:
 agent = build_agent()
 
 
+@spaces.GPU
 def answer_question(question: str, top_k: int) -> tuple[str, list[dict], dict]:
     """Run one question through the existing agent and format its trace."""
     if not question or not question.strip():
