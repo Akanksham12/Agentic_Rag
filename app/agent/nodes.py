@@ -83,18 +83,24 @@ class AgentNodes:
     def retrieve(self, state: AgentState) -> dict:
         """Embed the (possibly rewritten) query and fetch top-k chunks."""
         query = state.get("rewritten_question") or state["question"]
-        is_lora_query = "lora" in query.lower()
+        source_filter = self._topic_source(query)
+        is_lora_query = source_filter == "lora.pdf"
         if is_lora_query and "low-rank adaptation" not in query.lower():
             query = f"{query} Low-Rank Adaptation parameter-efficient fine-tuning"
         top_k = state.get("top_k") or self.settings.top_k
-        search_k = max(top_k, 12) if is_lora_query else top_k
+        search_k = max(top_k, 12) if source_filter else top_k
         results = self.store.similarity_search(
             self.embedder.embed_query(query),
             top_k=search_k,
-            source="lora.pdf" if is_lora_query else None,
+            source=source_filter,
         )
-        if is_lora_query:
-            keywords = ("problem", "trainable", "parameters", "memory", "freeze", "low-rank")
+        if source_filter and not results:
+            results = self.store.similarity_search(
+                self.embedder.embed_query(query), top_k=top_k
+            )
+            source_filter = None
+        if source_filter:
+            keywords = self._topic_keywords(source_filter)
             results.sort(
                 key=lambda result: sum(term in result.content.lower() for term in keywords),
                 reverse=True,
@@ -104,6 +110,33 @@ class AgentNodes:
             "retrieve", query=query, hits=len(results), attempt=state.get("attempts", 0) + 1
         )
         return {"retrieved": results, "attempts": state.get("attempts", 0) + 1}
+
+    @staticmethod
+    def _topic_source(query: str) -> str | None:
+        """Map explicit corpus topics to their source document."""
+        query = query.lower()
+        topics = (
+            (("lora", "low-rank adaptation"), "lora.pdf"),
+            (("retrieval augmented generation", "rag"), "rag.pdf"),
+            (("bert",), "bert.pdf"),
+            (("chain-of-thought", "chain of thought"), "chain_of_thought.pdf"),
+            (("transformer", "self-attention", "self attention"), "attention_is_all_you_need.pdf"),
+        )
+        for terms, source in topics:
+            if any(term in query for term in terms):
+                return source
+        return None
+
+    @staticmethod
+    def _topic_keywords(source: str) -> tuple[str, ...]:
+        """Return content terms that prefer explanatory chunks over references."""
+        return {
+            "lora.pdf": ("problem", "trainable", "parameters", "memory", "freeze", "low-rank"),
+            "rag.pdf": ("retrieval-augmented", "parametric", "non-parametric", "generator"),
+            "bert.pdf": ("masked language", "next sentence", "pre-training", "objective"),
+            "chain_of_thought.pdf": ("reasoning", "rationale", "chain-of-thought", "answer"),
+            "attention_is_all_you_need.pdf": ("self-attention", "encoder", "decoder", "recurrence"),
+        }.get(source, ())
 
     def grade_documents(self, state: AgentState) -> dict:
         """Self-check: do the retrieved chunks actually answer the question?"""

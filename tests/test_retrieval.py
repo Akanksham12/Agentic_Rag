@@ -152,6 +152,22 @@ def test_lora_retrieval_adds_ml_disambiguation() -> None:
     assert result["retrieved"]
 
 
+def test_named_rag_topic_filters_to_rag_source() -> None:
+    nodes = AgentNodes(
+        provider=FakeProvider(),
+        embedder=FakeEmbedder(),
+        store=FakeStore(
+            [
+                SearchResult("RAG context", {"source": "rag.pdf"}, 0.9),
+                SearchResult("BERT context", {"source": "bert.pdf"}, 0.8),
+            ]
+        ),
+        settings=Settings(),
+    )
+    result = nodes.retrieve({"question": "What is retrieval augmented generation?", "attempts": 0})
+    assert [item.source for item in result["retrieved"]] == ["rag.pdf"]
+
+
 def test_model_idk_answer_is_marked_abstained() -> None:
     nodes = AgentNodes(
         provider=FakeProvider(answer=IDK_MESSAGE),
