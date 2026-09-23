@@ -145,6 +145,19 @@ def test_persistently_weak_retrieval_exhausts_retries_then_abstains() -> None:
     assert final["attempts"] == 2  # looped exactly up to the bound
 
 
+def test_named_source_is_kept_when_grader_is_conservative() -> None:
+    agent = make_agent(
+        route="retrieve",
+        relevant=False,
+        results=[SearchResult("LoRA context", {"source": "lora.pdf"}, 0.9)],
+    )
+    final = agent.invoke(
+        {"question": "What problem does LoRA address?", "attempts": 0}
+    )
+    assert "FAKE ANSWER" in final["answer"]
+    assert final["sources"]
+
+
 def test_ungrounded_answer_is_replaced_by_abstention() -> None:
     agent = make_agent(route="retrieve", relevant=True, grounded=False)
     final = agent.invoke({"question": "q", "attempts": 0})

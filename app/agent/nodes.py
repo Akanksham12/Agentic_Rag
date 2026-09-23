@@ -10,6 +10,8 @@ transform, grounding) are added when the full graph is assembled.
 
 from __future__ import annotations
 
+import re
+
 from app.agent.prompts import (
     DIRECT_SYSTEM,
     GENERATE_SYSTEM,
@@ -106,9 +108,23 @@ class AgentNodes:
             # so we still attempt an answer rather than wrongly abstaining.
             logger.warning("grade_parse_failed", falling_back="relevant")
             relevant = True
+        if not relevant and self._query_names_retrieved_source(state):
+            relevant = True
+            logger.info("grade_overridden_by_source_match")
         grade = "relevant" if relevant else "insufficient"
         logger.info("grade_documents", grade=grade)
         return {"grade": grade}
+
+    @staticmethod
+    def _query_names_retrieved_source(state: AgentState) -> bool:
+        """Keep a directly named paper when a grader is overly conservative."""
+        query = (state.get("rewritten_question") or state["question"]).lower()
+        query_tokens = set(re.findall(r"[a-z0-9]+", query))
+        for result in state.get("retrieved", []):
+            source_tokens = set(re.findall(r"[a-z0-9]+", result.source.lower()))
+            if source_tokens & query_tokens:
+                return True
+        return False
 
     def generate(self, state: AgentState) -> dict:
         """Generate an answer grounded in the retrieved context, with citations."""
