@@ -167,6 +167,8 @@ class AgentNodes:
                 ]
             )
             rewritten = verdict.get("query") or state["question"]
+            if "lora" in state["question"].lower() and "low-rank" not in rewritten.lower():
+                rewritten = f"{rewritten} Low-Rank Adaptation parameter-efficient fine-tuning"
         except ValueError:
             rewritten = state["question"]
         logger.info("transform_query", rewritten=rewritten)
