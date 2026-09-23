@@ -89,7 +89,9 @@ class AgentNodes:
         top_k = state.get("top_k") or self.settings.top_k
         search_k = max(top_k, 12) if is_lora_query else top_k
         results = self.store.similarity_search(
-            self.embedder.embed_query(query), top_k=search_k
+            self.embedder.embed_query(query),
+            top_k=search_k,
+            source="lora.pdf" if is_lora_query else None,
         )
         if is_lora_query:
             keywords = ("problem", "trainable", "parameters", "memory", "freeze", "low-rank")
@@ -97,9 +99,7 @@ class AgentNodes:
                 key=lambda result: sum(term in result.content.lower() for term in keywords),
                 reverse=True,
             )
-            results = [
-                result for result in results if result.source.lower().endswith("lora.pdf")
-            ][:top_k]
+            results = results[:top_k]
         logger.info(
             "retrieve", query=query, hits=len(results), attempt=state.get("attempts", 0) + 1
         )

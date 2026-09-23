@@ -65,8 +65,10 @@ class FakeStore:
     def __init__(self, results: list[SearchResult]) -> None:
         self._results = results
 
-    def similarity_search(self, embedding, top_k=None) -> list[SearchResult]:
-        return self._results
+    def similarity_search(self, embedding, top_k=None, source=None) -> list[SearchResult]:
+        if source is None:
+            return self._results
+        return [result for result in self._results if result.source == source]
 
     def count(self) -> int:
         return len(self._results)

@@ -46,7 +46,11 @@ def answer_question(question: str, top_k: int) -> tuple[str, list[dict], dict]:
     if not question or not question.strip():
         return "Please enter a question.", [], {}
 
-    result = agent.run(question.strip(), top_k=int(top_k))
+    try:
+        retrieval_depth = int(top_k)
+    except (TypeError, ValueError):
+        retrieval_depth = 4
+    result = agent.run(question.strip(), top_k=retrieval_depth)
     trace = {
         "route": result["route_taken"],
         "attempts": result["attempts"],
