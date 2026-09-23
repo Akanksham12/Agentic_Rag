@@ -24,8 +24,11 @@ GENERATE_TEMPLATE = "Context:\n{context}\n\nQuestion: {question}\n\nAnswer:"
 
 # --- Document grading (self-check) -----------------------------------------
 GRADE_SYSTEM = (
-    "You are a strict relevance grader for a retrieval system. Judge only whether "
-    "the retrieved context contains enough information to answer the question."
+    "You are a relevance grader for a retrieval system. Decide whether the "
+    "retrieved context contains useful evidence related to the question. It does "
+    "not need to contain a complete answer; partial evidence is relevant because "
+    "the answer generator can synthesize it. Mark irrelevant only when the "
+    "passages do not meaningfully relate to the question."
 )
 
 GRADE_TEMPLATE = (
