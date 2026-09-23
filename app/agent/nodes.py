@@ -10,8 +10,6 @@ transform, grounding) are added when the full graph is assembled.
 
 from __future__ import annotations
 
-import re
-
 from app.agent.prompts import (
     DIRECT_SYSTEM,
     GENERATE_SYSTEM,
@@ -83,79 +81,17 @@ class AgentNodes:
     def retrieve(self, state: AgentState) -> dict:
         """Embed the (possibly rewritten) query and fetch top-k chunks."""
         query = state.get("rewritten_question") or state["question"]
-        source_filter = self._topic_source(query)
-        is_lora_query = source_filter == "lora.pdf"
-        if is_lora_query and "low-rank adaptation" not in query.lower():
-            query = f"{query} Low-Rank Adaptation parameter-efficient fine-tuning"
         top_k = state.get("top_k") or self.settings.top_k
-        search_k = max(top_k, 20) if source_filter else top_k
         results = self.store.similarity_search(
-            self.embedder.embed_query(query),
-            top_k=search_k,
-            source=source_filter,
+            self.embedder.embed_query(query), top_k=top_k
         )
-        if source_filter and not results:
-            results = self.store.similarity_search(
-                self.embedder.embed_query(query), top_k=top_k
-            )
-            source_filter = None
-        if source_filter:
-            keywords = self._topic_keywords(source_filter)
-            results.sort(
-                key=lambda result: self._evidence_score(result.content, keywords),
-                reverse=True,
-            )
-            results = results[:top_k]
         logger.info(
             "retrieve", query=query, hits=len(results), attempt=state.get("attempts", 0) + 1
         )
         return {"retrieved": results, "attempts": state.get("attempts", 0) + 1}
 
-    @staticmethod
-    def _topic_source(query: str) -> str | None:
-        """Map explicit corpus topics to their source document."""
-        query = query.lower()
-        topics = (
-            (("lora", "low-rank adaptation"), "lora.pdf"),
-            (("retrieval augmented generation", "rag"), "rag.pdf"),
-            (("bert",), "bert.pdf"),
-            (("chain-of-thought", "chain of thought"), "chain_of_thought.pdf"),
-            (("transformer", "self-attention", "self attention"), "attention_is_all_you_need.pdf"),
-        )
-        for terms, source in topics:
-            if any(term in query for term in terms):
-                return source
-        return None
-
-    @staticmethod
-    def _topic_keywords(source: str) -> tuple[str, ...]:
-        """Return content terms that prefer explanatory chunks over references."""
-        return {
-            "lora.pdf": ("problem", "trainable", "parameters", "memory", "freeze", "low-rank"),
-            "rag.pdf": ("retrieval-augmented", "parametric", "non-parametric", "generator"),
-            "bert.pdf": ("masked language", "next sentence", "pre-training", "objective"),
-            "chain_of_thought.pdf": ("reasoning", "rationale", "chain-of-thought", "answer"),
-            "attention_is_all_you_need.pdf": ("self-attention", "encoder", "decoder", "recurrence"),
-        }.get(source, ())
-
-    @staticmethod
-    def _evidence_score(content: str, keywords: tuple[str, ...]) -> int:
-        """Prefer explanatory prose and demote bibliography/table fragments."""
-        text = content.lower()
-        score = sum(text.count(term) for term in keywords)
-        if "abstract" in text or "introduction" in text or "we propose" in text:
-            score += 3
-        if any(marker in text for marker in ("arxiv", "http", "proceedings", "references")):
-            score -= 8
-        if "table " in text or "figure " in text:
-            score -= 2
-        return score
-
     def grade_documents(self, state: AgentState) -> dict:
         """Self-check: do the retrieved chunks actually answer the question?"""
-        if self._is_lora_source_match(state):
-            logger.info("grade_overridden_by_lora_source")
-            return {"grade": "relevant"}
         context = format_context(state.get("retrieved", []))
         try:
             verdict = self.provider.generate_json(
@@ -170,33 +106,9 @@ class AgentNodes:
             # so we still attempt an answer rather than wrongly abstaining.
             logger.warning("grade_parse_failed", falling_back="relevant")
             relevant = True
-        if not relevant and self._query_names_retrieved_source(state):
-            relevant = True
-            logger.info("grade_overridden_by_source_match")
         grade = "relevant" if relevant else "insufficient"
         logger.info("grade_documents", grade=grade)
         return {"grade": grade}
-
-    @staticmethod
-    def _query_names_retrieved_source(state: AgentState) -> bool:
-        """Keep a directly named paper when a grader is overly conservative."""
-        query = (state.get("rewritten_question") or state["question"]).lower()
-        query_tokens = set(re.findall(r"[a-z0-9]+", query))
-        for result in state.get("retrieved", []):
-            source_tokens = set(re.findall(r"[a-z0-9]+", result.source.lower()))
-            if source_tokens & query_tokens:
-                return True
-            if "lora" in query_tokens and "lora.pdf" in result.source.lower():
-                return True
-        return False
-
-    @staticmethod
-    def _is_lora_source_match(state: AgentState) -> bool:
-        """Recognize the corpus's LoRA paper deterministically."""
-        query = state.get("rewritten_question") or state["question"]
-        return "lora" in query.lower() and any(
-            result.source.lower().endswith("lora.pdf") for result in state.get("retrieved", [])
-        )
 
     def generate(self, state: AgentState) -> dict:
         """Generate an answer grounded in the retrieved context, with citations."""

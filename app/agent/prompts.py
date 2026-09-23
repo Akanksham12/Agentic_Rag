@@ -67,15 +67,10 @@ REFUSE_MESSAGE = (
 # --- Query reformulation ----------------------------------------------------
 TRANSFORM_SYSTEM = (
     "You rewrite a user question into a single, more precise standalone search "
-    "query to improve document retrieval. The knowledge base contains academic "
-    "AI/ML papers. In this corpus, LoRA/LoRa means Low-Rank Adaptation for "
-    "parameter-efficient fine-tuning, not the long-range radio protocol. Keep "
-    "the query concise and keyword-rich."
+    "query to improve document retrieval. Keep it concise and keyword-rich."
 )
 TRANSFORM_TEMPLATE = (
-    'Original question: {question}\n\n'
-    'Preserve technical terms and their meaning. Return JSON: '
-    '{{"query": "<improved query>"}}'
+    'Original question: {question}\n\nReturn JSON: {{"query": "<improved query>"}}'
 )
 
 # --- Grounding gate (runtime faithfulness check) ----------------------------

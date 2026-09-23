@@ -82,20 +82,15 @@ class ChromaStore:
         return len(chunks)
 
     def similarity_search(
-        self,
-        query_embedding: list[float],
-        top_k: int | None = None,
-        source: str | None = None,
+        self, query_embedding: list[float], top_k: int | None = None
     ) -> list[SearchResult]:
         """Return the ``top_k`` most similar chunks to a query embedding."""
         top_k = top_k or get_settings().top_k
         if self.count() == 0:
             return []
-        where = {"source": source} if source else None
         result = self._collection.query(
             query_embeddings=[query_embedding],
             n_results=top_k,
-            where=where,
         )
         docs = result["documents"][0]
         metas = result["metadatas"][0]

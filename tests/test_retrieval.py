@@ -65,10 +65,8 @@ class FakeStore:
     def __init__(self, results: list[SearchResult]) -> None:
         self._results = results
 
-    def similarity_search(self, embedding, top_k=None, source=None) -> list[SearchResult]:
-        if source is None:
-            return self._results
-        return [result for result in self._results if result.source == source]
+    def similarity_search(self, embedding, top_k=None) -> list[SearchResult]:
+        return self._results
 
     def count(self) -> int:
         return len(self._results)
@@ -139,35 +137,6 @@ def test_relevant_docs_produce_grounded_cited_answer() -> None:
     assert final["sources"]
 
 
-def test_lora_retrieval_adds_ml_disambiguation() -> None:
-    nodes = AgentNodes(
-        provider=FakeProvider(),
-        embedder=FakeEmbedder(),
-        store=FakeStore([SearchResult("x", {"source": "lora.pdf"}, 0.9)]),
-        settings=Settings(),
-    )
-    result = nodes.retrieve(
-        {"question": "What problem does LoRA address?", "attempts": 0}
-    )
-    assert result["retrieved"]
-
-
-def test_named_rag_topic_filters_to_rag_source() -> None:
-    nodes = AgentNodes(
-        provider=FakeProvider(),
-        embedder=FakeEmbedder(),
-        store=FakeStore(
-            [
-                SearchResult("RAG context", {"source": "rag.pdf"}, 0.9),
-                SearchResult("BERT context", {"source": "bert.pdf"}, 0.8),
-            ]
-        ),
-        settings=Settings(),
-    )
-    result = nodes.retrieve({"question": "What is retrieval augmented generation?", "attempts": 0})
-    assert [item.source for item in result["retrieved"]] == ["rag.pdf"]
-
-
 def test_model_idk_answer_is_marked_abstained() -> None:
     nodes = AgentNodes(
         provider=FakeProvider(answer=IDK_MESSAGE),
@@ -187,19 +156,6 @@ def test_persistently_weak_retrieval_exhausts_retries_then_abstains() -> None:
     assert final["abstained"] is True
     assert final["answer"] == IDK_MESSAGE
     assert final["attempts"] == 2  # looped exactly up to the bound
-
-
-def test_named_source_is_kept_when_grader_is_conservative() -> None:
-    agent = make_agent(
-        route="retrieve",
-        relevant=False,
-        results=[SearchResult("LoRA context", {"source": "lora.pdf"}, 0.9)],
-    )
-    final = agent.invoke(
-        {"question": "What problem does LoRA address?", "attempts": 0}
-    )
-    assert "FAKE ANSWER" in final["answer"]
-    assert final["sources"]
 
 
 def test_ungrounded_answer_is_replaced_by_abstention() -> None:
