@@ -39,7 +39,7 @@ class Settings(BaseSettings):
 
     # Groq cloud (free tier). Key is read from the environment only.
     groq_api_key: str | None = None
-    groq_model: str = "llama-3.3-70b-versatile"
+    groq_model: str = "openai/gpt-oss-20b"
 
     # --- Embeddings (always local) ------------------------------------------
     embedding_model: str = "all-MiniLM-L6-v2"
