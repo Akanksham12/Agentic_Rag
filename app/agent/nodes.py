@@ -126,6 +126,8 @@ class AgentNodes:
             source_tokens = set(re.findall(r"[a-z0-9]+", result.source.lower()))
             if source_tokens & query_tokens:
                 return True
+            if "lora" in query_tokens and "lora.pdf" in result.source.lower():
+                return True
         return False
 
     def generate(self, state: AgentState) -> dict:
