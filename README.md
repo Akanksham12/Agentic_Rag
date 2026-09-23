@@ -17,7 +17,7 @@ retrieval at all, grades whether the retrieved context actually answers the
 question, reformulates and retries weak queries, checks its own answer for
 grounding, and abstains ("I don't know") instead of guessing.
 
-**Live demo:** https://nidixh-agentic-rag.hf.space/docs (interactive API docs)
+**Live demo:** Add your Hugging Face Space URL here after deployment.
 
 ## Architecture
 
@@ -208,11 +208,11 @@ complete solution.
 
 ## Deployment
 
-Hosted free on Hugging Face Spaces (Docker), using Groq for generation so the
-demo needs no GPU: **https://nidixh-agentic-rag.hf.space/docs**. The image (see
-`Dockerfile`) bakes the embedding model and pre-ingests the corpus; the provider
-is selected with the `LLM_PROVIDER` and `GROQ_API_KEY` environment variables set
-on the Space.
+Hosted on Hugging Face Spaces (Docker), using Groq for generation so the demo
+needs no GPU. The image (see `Dockerfile`) bakes the embedding model and
+pre-ingests the corpus; the provider is selected with the `LLM_PROVIDER` and
+`GROQ_API_KEY` environment variables set on the Space. Add the deployed Space
+URL here after creating your own Space.
 
 ## Tech stack
 

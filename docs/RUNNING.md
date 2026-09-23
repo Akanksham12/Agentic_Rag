@@ -21,8 +21,8 @@ Install these once per machine:
 Clone it (or open the existing folder):
 
 ```powershell
-git clone https://github.com/nidixh/agentic-rag.git
-cd agentic-rag
+git clone https://github.com/<your-github-username>/<your-repository>.git
+cd <your-repository>
 ```
 
 In VS Code: `File -> Open Folder...` and select the project folder.

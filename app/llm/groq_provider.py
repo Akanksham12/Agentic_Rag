@@ -46,12 +46,14 @@ class GroqProvider(LLMProvider):
         max_tokens: int | None = None,
     ) -> str:
         """Call Groq's chat completions API and return the message text."""
-        resp = self._client.chat.completions.create(
-            model=self.model,
-            messages=messages,
-            temperature=temperature,
-            max_tokens=max_tokens,
-        )
+        request = {
+            "model": self.model,
+            "messages": messages,
+            "temperature": temperature,
+        }
+        if max_tokens is not None:
+            request["max_tokens"] = max_tokens
+        resp = self._client.chat.completions.create(**request)
         content = resp.choices[0].message.content or ""
         logger.debug("groq_generate", model=self.model, chars=len(content))
         return content.strip()
