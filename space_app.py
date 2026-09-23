@@ -36,6 +36,11 @@ agent = build_agent()
 
 
 @spaces.GPU
+def _zerogpu_marker() -> None:
+    """Declare ZeroGPU compatibility without requiring GPU for this app."""
+    return None
+
+
 def answer_question(question: str, top_k: int) -> tuple[str, list[dict], dict]:
     """Run one question through the existing agent and format its trace."""
     if not question or not question.strip():
