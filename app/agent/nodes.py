@@ -88,7 +88,7 @@ class AgentNodes:
         if is_lora_query and "low-rank adaptation" not in query.lower():
             query = f"{query} Low-Rank Adaptation parameter-efficient fine-tuning"
         top_k = state.get("top_k") or self.settings.top_k
-        search_k = max(top_k, 12) if source_filter else top_k
+        search_k = max(top_k, 20) if source_filter else top_k
         results = self.store.similarity_search(
             self.embedder.embed_query(query),
             top_k=search_k,
@@ -102,7 +102,7 @@ class AgentNodes:
         if source_filter:
             keywords = self._topic_keywords(source_filter)
             results.sort(
-                key=lambda result: sum(term in result.content.lower() for term in keywords),
+                key=lambda result: self._evidence_score(result.content, keywords),
                 reverse=True,
             )
             results = results[:top_k]
@@ -137,6 +137,19 @@ class AgentNodes:
             "chain_of_thought.pdf": ("reasoning", "rationale", "chain-of-thought", "answer"),
             "attention_is_all_you_need.pdf": ("self-attention", "encoder", "decoder", "recurrence"),
         }.get(source, ())
+
+    @staticmethod
+    def _evidence_score(content: str, keywords: tuple[str, ...]) -> int:
+        """Prefer explanatory prose and demote bibliography/table fragments."""
+        text = content.lower()
+        score = sum(text.count(term) for term in keywords)
+        if "abstract" in text or "introduction" in text or "we propose" in text:
+            score += 3
+        if any(marker in text for marker in ("arxiv", "http", "proceedings", "references")):
+            score -= 8
+        if "table " in text or "figure " in text:
+            score -= 2
+        return score
 
     def grade_documents(self, state: AgentState) -> dict:
         """Self-check: do the retrieved chunks actually answer the question?"""
