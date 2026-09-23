@@ -1,13 +1,13 @@
 ---
 title: Agentic RAG
-sdk: docker
-app_port: 7860
+sdk: gradio
+app_file: space_app.py
 ---
 
 # Agentic RAG
 
 An agentic Retrieval-Augmented Generation service with a reproducible evaluation
-harness, served over FastAPI. It runs locally at no cost during development
+harness, served through Gradio on Hugging Face Spaces and FastAPI locally. It runs locally at no cost during development
 (Ollama + local embeddings + Chroma) and deploys to a free host by swapping the
 LLM provider with a single environment variable.
 
