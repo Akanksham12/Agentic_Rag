@@ -172,3 +172,19 @@ def test_grounding_gate_can_be_disabled() -> None:
     # With the gate off, the answer stands even though grounded would be False.
     assert "FAKE ANSWER" in final["answer"]
     assert final["abstained"] is False
+
+
+def test_transform_query_keeps_query_generic() -> None:
+    class GenericProvider(FakeProvider):
+        def generate_json(self, messages, temperature=0.0):
+            return {"query": "What is LoRa?"}
+
+    nodes = AgentNodes(
+        provider=GenericProvider(),
+        embedder=FakeEmbedder(),
+        store=FakeStore([]),
+        settings=Settings(),
+    )
+    out = nodes.transform_query({"question": "What is LoRa?"})
+    assert "Low-Rank Adaptation" not in out["rewritten_question"]
+    assert "LoRa" in out["rewritten_question"]
