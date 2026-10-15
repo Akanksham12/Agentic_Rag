@@ -6,8 +6,8 @@ ourselves. We supply pre-computed embeddings (from :class:`~app.embeddings.
 embedder.Embedder`) rather than using Chroma's built-in embedder, so the
 embedding model stays a single owned concern.
 
-The collection is configured for cosine space; reported ``score`` is cosine
-similarity in ``[0, 1]`` (higher = more similar).
+The collection is configured for cosine space; reported ``score`` is one minus
+Chroma's cosine distance (higher = more similar).
 """
 
 from __future__ import annotations
@@ -56,7 +56,10 @@ class ChromaStore:
             metadata={"hnsw:space": "cosine"},
         )
         logger.info(
-            "chroma_ready", persist_dir=self.persist_dir, collection=self.collection_name
+            "chroma_ready",
+            persist_dir=self.persist_dir,
+            collection=self.collection_name,
+            distance_metric=(self._collection.metadata or {}).get("hnsw:space", "l2"),
         )
 
     def add_chunks(self, chunks: list[Chunk], embeddings: list[list[float]]) -> int:
@@ -95,10 +98,26 @@ class ChromaStore:
         docs = result["documents"][0]
         metas = result["metadatas"][0]
         distances = result["distances"][0]
-        return [
+        matches = [
             SearchResult(content=doc, metadata=meta or {}, score=1.0 - float(dist))
             for doc, meta, dist in zip(docs, metas, distances, strict=False)
         ]
+        logger.info(
+            "vector_search_results",
+            distance_metric=(self._collection.metadata or {}).get("hnsw:space", "l2"),
+            results=[
+                {
+                    "rank": rank,
+                    "source": match.source,
+                    "distance": float(distance),
+                    "score": match.score,
+                }
+                for rank, (match, distance) in enumerate(
+                    zip(matches, distances, strict=True), start=1
+                )
+            ],
+        )
+        return matches
 
     def count(self) -> int:
         """Number of chunks currently stored."""
