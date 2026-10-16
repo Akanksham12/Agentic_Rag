@@ -117,6 +117,15 @@ class ChromaStore:
                 )
             ],
         )
+        for rank, (match, distance) in enumerate(zip(matches, distances, strict=True), start=1):
+            logger.info(
+                "retrieved_chunk_debug",
+                rank=rank,
+                source=match.source,
+                distance=float(distance),
+                score=match.score,
+                content=match.content[:800],
+            )
         return matches
 
     def count(self) -> int:
