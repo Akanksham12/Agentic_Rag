@@ -83,8 +83,29 @@ class AgentNodes:
         query = state.get("rewritten_question") or state["question"]
         top_k = state.get("top_k") or self.settings.top_k
         results = self.store.similarity_search(
-            self.embedder.embed_query(query), top_k=top_k
+            self.embedder.embed_query(query), top_k=max(top_k, 8)
         )
+
+        if not results or all(result.score < 0.15 for result in results):
+            keyword_results = self.store.keyword_search(query, top_k=top_k)
+            if keyword_results:
+                deduped: list[SearchResult] = []
+                seen: set[tuple[str, str]] = set()
+                for result in keyword_results + results:
+                    key = (result.source, result.content[:120].strip())
+                    if key in seen:
+                        continue
+                    seen.add(key)
+                    deduped.append(result)
+                results = deduped[:top_k]
+                logger.info(
+                    "retrieve_fallback",
+                    query=query,
+                    semantic_hits=len(results),
+                    keyword_hits=len(keyword_results),
+                    attempt=state.get("attempts", 0) + 1,
+                )
+
         logger.info(
             "retrieve", query=query, hits=len(results), attempt=state.get("attempts", 0) + 1
         )

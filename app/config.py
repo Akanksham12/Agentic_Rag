@@ -53,7 +53,7 @@ class Settings(BaseSettings):
     chunk_overlap: int = 150
 
     # --- Retrieval / agent behaviour ----------------------------------------
-    top_k: int = 4
+    top_k: int = 8
     max_attempts: int = 2
     enable_grounding_check: bool = True
 

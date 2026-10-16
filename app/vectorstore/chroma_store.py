@@ -12,6 +12,8 @@ Chroma's cosine distance (higher = more similar).
 
 from __future__ import annotations
 
+import re
+from collections import Counter
 from dataclasses import dataclass, field
 from typing import Any
 
@@ -126,6 +128,39 @@ class ChromaStore:
                 score=match.score,
                 content=match.content[:800],
             )
+        return matches
+
+    def keyword_search(self, query: str, top_k: int | None = None) -> list[SearchResult]:
+        """Keyword fallback used when semantic similarity is weak or noisy."""
+        top_k = top_k or get_settings().top_k
+        if self.count() == 0:
+            return []
+
+        chunk_data = self._collection.get(include=["documents", "metadatas"])
+        docs = chunk_data.get("documents", [])
+        metas = chunk_data.get("metadatas", [])
+        tokens = {
+            token.lower()
+            for token in re.findall(r"[a-z0-9]+", query.lower())
+            if len(token) > 2
+        }
+        if not tokens:
+            return []
+
+        scored: list[tuple[float, SearchResult]] = []
+        for doc, meta in zip(docs, metas, strict=False):
+            if not doc:
+                continue
+            doc_tokens = Counter(re.findall(r"[a-z0-9]+", doc.lower()))
+            overlap = sum(doc_tokens[token] for token in tokens if token in doc_tokens)
+            if overlap <= 0:
+                continue
+            score = overlap / max(1, len(tokens))
+            scored.append((score, SearchResult(content=doc, metadata=meta or {}, score=score)))
+
+        scored.sort(key=lambda item: item[0], reverse=True)
+        matches = [match for _, match in scored[:top_k]]
+        logger.info("keyword_search_results", query=query, hits=len(matches))
         return matches
 
     def count(self) -> int:

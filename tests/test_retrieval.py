@@ -62,11 +62,15 @@ class FakeEmbedder:
 
 
 class FakeStore:
-    def __init__(self, results: list[SearchResult]) -> None:
+    def __init__(self, results: list[SearchResult], fallback: list[SearchResult] | None = None) -> None:
         self._results = results
+        self._fallback = fallback or []
 
     def similarity_search(self, embedding, top_k=None) -> list[SearchResult]:
         return self._results
+
+    def keyword_search(self, query: str, top_k=None) -> list[SearchResult]:
+        return self._fallback
 
     def count(self) -> int:
         return len(self._results)
@@ -104,6 +108,20 @@ def test_retrieve_increments_attempts_and_returns_hits() -> None:
     out = nodes.retrieve({"question": "q", "attempts": 0})
     assert out["attempts"] == 1
     assert len(out["retrieved"]) == 1
+
+
+def test_retrieve_uses_keyword_fallback_for_weak_semantic_results() -> None:
+    weak = [SearchResult("random chunk", {"source": "chain.pdf"}, 0.01)]
+    strong = [SearchResult("BERT stands for Bidirectional Encoder Representations from Transformers.", {"source": "bert.pdf"}, 0.9)]
+    nodes = AgentNodes(
+        provider=FakeProvider(),
+        embedder=FakeEmbedder(),
+        store=FakeStore(weak, strong),
+        settings=Settings(),
+    )
+    out = nodes.retrieve({"question": "what does BERT stand for?", "attempts": 0})
+    assert out["attempts"] == 1
+    assert out["retrieved"][0].source == "bert.pdf"
 
 
 # -- routing -----------------------------------------------------------------

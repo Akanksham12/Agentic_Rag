@@ -70,10 +70,15 @@ REFUSE_MESSAGE = (
 # --- Query reformulation ----------------------------------------------------
 TRANSFORM_SYSTEM = (
     "You rewrite a user question into a single, more precise standalone search "
-    "query to improve document retrieval. Keep it concise and keyword-rich."
+    "query to improve document retrieval. Only rewrite when the original question "
+    "is ambiguous or underspecified. If the question is already clear, return it "
+    "unchanged. Keep it concise and keyword-rich, and do not invent a definition "
+    "phrase when the original query is already a direct factual question."
 )
 TRANSFORM_TEMPLATE = (
-    'Original question: {question}\n\nReturn JSON: {{"query": "<improved query>"}}'
+    'Original question: {question}\n\n'
+    'If the original question is already clear and answerable, return it unchanged. '
+    'Return JSON: {{"query": "<improved query or original query>"}}'
 )
 
 # --- Grounding gate (runtime faithfulness check) ----------------------------
